@@ -28,7 +28,6 @@ github_username: nOvlc3
 
 # Build settings
 theme: minima
-remote_theme: nOvlc3/minima
 plugins:
   - jekyll-feed
 
