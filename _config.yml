@@ -21,7 +21,7 @@
 title: Jinc Lion's Blog
 email: 2912154279@qq.com
 description: >- # this means to ignore newlines until "baseurl:"
-这里是Jinc Lion(github nOvlc3)的个人博客, 感谢 Github 提供这个开放平台, 感谢北大FlyPig的自学指南, 感谢带我入门计算机世界的Levi大师, 感谢陪我进行网络实验和Linux实验的mcdudu233.
+  这里是Jinc Lion(github nOvlc3)的个人博客, 感谢 Github 提供这个开放平台, 感谢北大FlyPig的自学指南, 感谢带我入门计算机世界的Levi大师, 感谢陪我进行网络实验和Linux实验的mcdudu233.
 baseurl: "/nOvlc3_blogs" # the subpath of your site, e.g. /blog
 url: "https://novlc3.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 github_username: nOvlc3
