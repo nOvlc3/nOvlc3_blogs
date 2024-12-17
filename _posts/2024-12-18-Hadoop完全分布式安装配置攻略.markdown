@@ -1,0 +1,108 @@
+---
+layout: post
+title:  "Hadoop完全分布式安装配置攻略"
+date:   2024-12-17 21:15 +0800
+categories: jekyll update
+---
+
+本文记录了在 5 台虚拟机上安装配置 Hadoop 的过程。
+
+## 1. 初始环境准备
+
+首先，我拥有学校提供的 5 台虚拟机的控制权限，作为 root 用户进行操作。
+> 如果你没有这种环境，可以选择使用 docker，具体使用请学习 docker。这是 docker 的[官方文档](https://docs.docker.com/get-started/)。
+>
+> 借助 docker ， 你可以通过 `docker run -d --name hadoop101` 类似的命令运行多个容器实例，然后通过`docker exec -it Hadoop101 /bin/bash`
+> 进入容器实例，进行 Hadoop 的安装配置。
+
+在这里，我所拥有的 5 台虚拟机，ip地址由 172.11.10.1 到 172.11.10.5。
+
+### Hadoop 节点配置
+
+我的规划是：一个虚拟机放 namenode，一个放 secondary namenode，一个放 resourcemanager，三个放 datanode。
+这其中， namenode 和 resource manager 是不与 datanode 共存的。
+
+后续为了方便操作，需要编写 `/etc/hosts` 文件
+
+![hosts]({{ site.baseurl }}/imgs/hadoop/1.png)
+
+还需要配置环境变量，这里我配置在 `/root/.bashrc` 文件中
+> 当然，也可以配置在 `/etc/profile` 文件中，这样所有用户都可以使用这些环境变量。
+
+![hosts]({{ site.baseurl }}/imgs/hadoop/2.png)
+> 这里注意，如果你不是用 root 用户进行操作， 请忽略配置文件中有关 root 用户配置的部分。使用 `sudo adduser hadoopuser` 创建新用户。
+
+这里你需要下载 Hadoop 压缩包到一个指定位置，在我的例子中，我放置在 `/opt/hadoop-3.3.6`
+> 下载 Hadoop 可从[清华镜像](https://mirror.tuna.tsinghua.edu.cn/apache/hadoop/core/hadoop-3.3.6/) 或 [中科大镜像](https://mirrors.ustc.edu.cn/apache/hadoop/core/hadoop-3.3.6/) 下载
+
+顺带下载一个 jdk-8，我放置在 `/usr/lib/jvm/jdk-1.8-oracle-aarch64`, 我的虚拟机是 arm 架构的，所以下载的是 arm 架构的 jdk-8。
+> 可以使用 linux 自带的包管理器安装 jdk-8，如 `sudo apt-get install openjdk-8-jdk`。
+
+#### SSH免密登录
+
+在测试环境中，我仅使用一对 ssh key，而不是使用多对 ssh key，这样可以减少配置的复杂度。当然，你可以使用多对 ssh key。使用 `ssh-keygen -t rsa` 生成 ssh key, 然后通过 `cat id_rsa.pub >> authorized_keys` 将公钥添加到 authorized_keys 文件中。最后通过 `scp authorized_keys root@hadoop101:/root/.ssh/` 将公钥文件拷贝到其他节点。
+> 这里, 如果 ip 地址整齐的话, 可以使用 `for i in {1..5}; do scp authorized_keys root@172.11.10.$i:/root/.ssh/; done` 一次性拷贝到所有节点。
+>
+> 说到这里，你可以先配置一台虚拟机，然后复制所有的文件夹到其他虚拟机上，最好用 `rsync` 命令, 这会检查文件是否一致，如果不一致，才会重新传输。
+
+使用如下命令验证 ssh 免密登录是否成功:
+
+![ssh]({{ site.baseurl }}/imgs/hadoop/3.png)
+
+使用如下命令检查 jdk 是否配置正确:
+
+![jdk]({{ site.baseurl }}/imgs/hadoop/4.png)
+
+使用如下命令检查 hadoop 是否配置正确:
+
+![hadoop]({{ site.baseurl }}/imgs/hadoop/5.png)
+
+![hadoop]({{ site.baseurl }}/imgs/hadoop/6.png)
+> 查看各节点 hadoop 版本
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
