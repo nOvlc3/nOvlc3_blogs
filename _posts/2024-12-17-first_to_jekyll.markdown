@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "非常高兴使用Jekyll在Github上建立我的博客"
+title:  "First time to Github Pages"
 date:   2024-12-17 15:59:41 +0800
 categories: jekyll update
 ---
