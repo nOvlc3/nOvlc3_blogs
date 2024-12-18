@@ -2,6 +2,7 @@
 layout: post
 title:  "Hadoop完全分布式安装配置攻略"
 date:   2024-12-17 21:15 +0800
+last_updated: 2024-12-18 09:15 +0800
 categories: jekyll update
 ---
 
@@ -29,80 +30,209 @@ categories: jekyll update
 还需要配置环境变量，这里我配置在 `/root/.bashrc` 文件中
 > 当然，也可以配置在 `/etc/profile` 文件中，这样所有用户都可以使用这些环境变量。
 
+```bash
+[root@localhost hadoop]# cat ~/.bashrc
+# .bashrc
+
+# User specific aliases and functions
+
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+        . /etc/bashrc
+fi
+
+export HADOOP_HOME='/opt/hadoop-3.3.6'
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export PATH=$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
+export LD_LIBRARY_PATH=$HADOOP_HOME/lib/native:$LD_LIBRARY_PATH
+
+export JAVA_HOME='/usr/lib/jvm/jdk-1.8-oracle-aarch64'
+export PATH=$JAVA_HOME/bin:$PATH
+
+export HDFS_NAMENODE_USER=root
+export HDFS_DATANODE_USER=root
+export HDFS_SECONDARYNAMENODE_USER=root
+export YARN_RESOURCEMANAGER_USER=root
+export YARN_NODEMANAGER_USER=root
+
+export SPARK_HOME=/opt/spark-3.5.3-bin-hadoop3/
+```
+
 ![hosts]({{ site.baseurl }}/imgs/hadoop/2.png)
 > 这里注意，如果你不是用 root 用户进行操作， 请忽略配置文件中有关 root 用户配置的部分。使用 `sudo adduser hadoopuser` 创建新用户。
 
 这里你需要下载 Hadoop 压缩包到一个指定位置，在我的例子中，我放置在 `/opt/hadoop-3.3.6`
 > 下载 Hadoop 可从[清华镜像](https://mirror.tuna.tsinghua.edu.cn/apache/hadoop/core/hadoop-3.3.6/) 或 [中科大镜像](https://mirrors.ustc.edu.cn/apache/hadoop/core/hadoop-3.3.6/) 下载
 
-顺带下载一个 jdk-8，我放置在 `/usr/lib/jvm/jdk-1.8-oracle-aarch64`, 我的虚拟机是 arm 架构的，所以下载的是 arm 架构的 jdk-8。
+顺带下载一个 jdk-8，我放置在 `/usr/lib/jvm/jdk-1.8-oracle-aarch64`， 我的虚拟机是 arm 架构的，所以下载的是 arm 架构的 jdk-8。
 > 可以使用 linux 自带的包管理器安装 jdk-8，如 `sudo apt-get install openjdk-8-jdk`。
 
 #### SSH免密登录
 
-在测试环境中，我仅使用一对 ssh key，而不是使用多对 ssh key，这样可以减少配置的复杂度。当然，你可以使用多对 ssh key。使用 `ssh-keygen -t rsa` 生成 ssh key, 然后通过 `cat id_rsa.pub >> authorized_keys` 将公钥添加到 authorized_keys 文件中。最后通过 `scp authorized_keys root@hadoop101:/root/.ssh/` 将公钥文件拷贝到其他节点。
-> 这里, 如果 ip 地址整齐的话, 可以使用 `for i in {1..5}; do scp authorized_keys root@172.11.10.$i:/root/.ssh/; done` 一次性拷贝到所有节点。
+在测试环境中，我仅使用一对 ssh key，而不是使用多对 ssh key，这样可以减少配置的复杂度。当然，你可以使用多对 ssh key。使用 `ssh-keygen -t rsa` 生成 ssh key， 然后通过 `cat id_rsa.pub >> authorized_keys` 将公钥添加到 authorized_keys 文件中。最后通过 `scp authorized_keys root@hadoop101:/root/.ssh/` 将公钥文件拷贝到其他节点。
+> 这里， 如果 ip 地址整齐的话， 可以使用 `for i in {1..5}; do scp authorized_keys root@172.11.10.$i:/root/.ssh/; done` 一次性拷贝到所有节点。
 >
-> 说到这里，你可以先配置一台虚拟机，然后复制所有的文件夹到其他虚拟机上，最好用 `rsync` 命令, 这会检查文件是否一致，如果不一致，才会重新传输。
+> 说到这里，你可以先配置一台虚拟机，然后复制所有的文件夹到其他虚拟机上，最好用 `rsync` 命令， 这会检查文件是否一致，如果不一致，才会重新传输。
 
-使用如下命令验证 ssh 免密登录是否成功:
+使用如下命令验证 ssh 免密登录是否成功 `for i in {1..5}; do ssh root@hadoop${i} "ip addr show eth0 | grep inet"; done`:
+> 注意，这里的 `eth0` 是网卡名称，如果你的网卡名称不是 `eth0`，请自行更改。
 
 ![ssh]({{ site.baseurl }}/imgs/hadoop/3.png)
 
-使用如下命令检查 jdk 是否配置正确:
+使用如下命令检查 jdk 是否配置正确 ```for i in {1..5}; do ssh root@hadoop${i} "echo $JAVA_HOME"; done```:
+> 注意，尽管将 JAVA_HOME 配置在了 `/root/.bashrc` 文件中，但是推荐将这个变量再写到 `$HADOOP_HOME/etc/hadoop/hadoop-env.sh` 文件中，这样可以保证 Hadoop 的各个组件都能使用到这个环境变量。
 
 ![jdk]({{ site.baseurl }}/imgs/hadoop/4.png)
 
-使用如下命令检查 hadoop 是否配置正确:
+使用如下命令检查 hadoop 是否配置正确 ```for i in {1..5}; do ssh root@hadoop${i} "echo $HADOOP_HOME"; done```:
 
 ![hadoop]({{ site.baseurl }}/imgs/hadoop/5.png)
 
+查看各节点 hadoop 版本 ```for i in {1..5}; do ssh root@hadoop${i} "hadoop version && echo -e '------\n'"; done```:
+
 ![hadoop]({{ site.baseurl }}/imgs/hadoop/6.png)
-> 查看各节点 hadoop 版本
+
+#### 核心配置文件
+
+core-site.xml
+
+```bash
+[root@localhost hadoop]# cat core-site.xml
+<configuration>
+
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://hadoop101:9000</value>
+    </property>
+
+    <property>
+        <name>hadoop.tmp.dir</name>
+        <value>/tmp/hadoop-${user.name}</value>
+    </property>
+
+    <property>
+        <name>hadoop.http.staticuser.user</name>
+        <value>delopy</value>
+    </property>
+
+</configuration>
+```
+
+> 上方的 “9000”端口号可自行调整
+
+---
+
+hdfs-site.xml
+
+```bash
+[root@localhost hadoop]# cat hdfs-site.xml
+<configuration>
+
+    <property>
+        <name>dfs.replication</name>
+        <value>3</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.http-address</name>
+        <value>hadoop101:9870</value>
+    </property>
+    <property>
+        <name>dfs.namenode.secondary.http-address</name>
+        <value>hadoop102:9868</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file:///data/hadoop/namenode</value>
+    </property>
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file:///data/hadoop/datanode</value>
+    </property>
+
+</configuration>
+```
+
+> - namenode 和 datanode 的存放路径可自定义，但注意要在各节点上手动创建这些目录。
+> - http 端口号可以调整，后面通过浏览器验证时会用到
+
+如下命令可一次性在所有节点上创建这些目录(ssh免密登录是前提)：
+> `for i in {1..5}; do ssh root@hadoop${i} "mkdir -p /data/hadoop/namenode /data/hadoop/datanode"; done`
+
+---
+
+yarn-site.xml
+
+```bash
+[root@localhost hadoop]# cat yarn-site.xml
+<configuration>
+
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>hadoop103</value>
+    </property>
+
+    <property>
+        <name>yarn.resourcemanager.webapp.addaress</name>
+        <value>hadoop103:8088</value>
+    </property>
 
 
+    <property>
+        <name>yarn.nodemanager.env-whitelist</name>
+    <value>JAVA_HOME，HADOOP_COMMON_HOME，HADOOP_HDFS_HOME，HADOOP_CONF_DIR，CLASSPATH_PREPEND_DISTCACHE，HADOOP_YARN_HOME，HADOOP_MAPRED_HOME</value>
+    </property>
 
+</configuration>
+```
 
+> 这里主要关注的重点是 `yarn.resourcemanager.hostname` 和 `yarn.resourcemanager.webapp.addaress`，这两个属性的值要与实际的节点 ip 地址一致。两者分别指定了 resourcemanager 的主机和 web 界面的地址。
 
+---
 
+mapred-site.xml
 
+```bash
+[root@localhost hadoop]# cat mapred-site.xml
+<configuration>
 
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
 
+</configuration>
+```
 
+> 因为我使用 Hadoop 主要是用 HDFS，mapreduce 尽管能力强大，但是在分布式计算中，我更加偏好 Spark 。
 
+### 启动 Hadoop
 
+在上述工作完成以后，执行 `hdfs namenode -format` 格式化 namenode，然后执行 `start-dfs.sh` 启动 HDFS，执行 `start-yarn.sh` 启动 YARN。
+> 如果有任何技术问题， 可以发邮件给我[邮箱](mailto:ljc2912154279@gmail.com)
+>
+> 其次， 可以 `cd $HADOOP_HOME/logs` 查看日志文件，查看错误信息。注意， 如果要看 namenode 的日志， 需要进入 namenode 所在的节点查看。相应的，如果要看 datanode 的日志， 需要进入 datanode 所在的节点查看。
 
+这里我遇到的问题是端口号无法使用的问题，根据 ChatGPT 的建议， 我使用 `firewall-cmd --zone=public --add-port=9000/tcp --permanent` 命令添加端口号，然后使用 `firewall-cmd --reload` 重启防火墙。
+> 同样需要在各个节点上执行一遍。
 
+### 检查 Hadoop 各组件工作状态
 
+使用 `jps` 命令查看各个节点上的 Hadoop 组件是否正常工作。请确认对应机器上运行着你规划的 Hadoop 组件。
 
+使用 `hdfs dfsadmin -report` 命令查看 HDFS 的状态，确认 namenode 和 datanode 的数量是否正确。
+> 类似输出如下：
 
+![hdfs]({{ site.baseurl }}/imgs/hadoop/7.png)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+之后，可以通过浏览器访问 namenode 和 resourcemanager 的 web 界面，确认是否正常工作。在我的例子中，我应该访问 “[http://hadoop101:9870](http://hadoop101:9870)”。
