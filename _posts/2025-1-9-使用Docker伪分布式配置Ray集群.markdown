@@ -34,13 +34,13 @@ CMD ["/bin/bash"]
 
 运行结果：
 
-![build](../imgs/ray_cluster/PixPin_2025-01-09_19-47-57.png)
+![build]({{ site.baseurl }}/imgs/ray_cluster/PixPin_2025-01-09_19-47-57.png)
 
 > 之前笔者先拉取 ubuntn 镜像, 再安装 miniconda3 来创建 python 环境, 这种方式会有环境上的问题, 笔者用着不好
 
 通过 `docker images | grep ray` 查看镜像是否创建成功
 
-![ray](../imgs/ray_cluster/PixPin_2025-01-09_19-46-05.png)
+![ray]({{ site.baseurl }}/imgs/ray_cluster/PixPin_2025-01-09_19-46-05.png)
 
 ## 编写 yaml 配置文件
 
@@ -90,13 +90,13 @@ networks:
 
 通过 `docker-compose -f ray_cluster.yml up -d` 启动 Ray 集群
 
-![up](../imgs/ray_cluster/PixPin_2025-01-09_20-01-02.png)
+![up]({{ site.baseurl }}/imgs/ray_cluster/PixPin_2025-01-09_20-01-02.png)
 
 通过 `docker exec -it ray_head /bin/bash` 进入头节点， 然后通过 `ray status` 检查集群情况:
 
-![exec](../imgs/ray_cluster/PixPin_2025-01-09_20-01-52.png)
+![exec]({{ site.baseurl }}/imgs/ray_cluster/PixPin_2025-01-09_20-01-52.png)
 
 
 使用 `docker-compose -f ray_cluster.yml down` 停止集群运行
 
-![down](../imgs/ray_cluster/PixPin_2025-01-09_19-58-51.png)
+![down]({{ site.baseurl }}/imgs/ray_cluster/PixPin_2025-01-09_19-58-51.png)
